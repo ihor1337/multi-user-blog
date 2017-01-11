@@ -1,0 +1,21 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+    {{post.render(token) | safe}}
+    {%  for c in comment %}
+        <p>{{ c.comment }}</p> <span>{{ c.owner.name }}</span>
+    {% endfor %}
+
+
+    <form method='POST' action="{{ post.key().id()}}/rate">
+        <input type="submit" value="&#10084;">
+        <input type="hidden" name="token" value="{{ token }}">
+    </form>
+    {{ likes }}
+
+    <a href="{{ post.key().id() }}/edit">Edit this post</a>
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+{% endblock %}

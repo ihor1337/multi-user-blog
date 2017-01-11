@@ -1,0 +1,16 @@
+<div class="post">
+    <div class="post-title">
+       <a href="{{ p.key().id() }}">{{p.title}}</a>
+    </div>
+    <div class="post-body">
+        {{p.render_text | safe}}
+    </div>
+    <span>Post author: {{ p.owner.name }}</span>
+
+    <h3>Leave a comment</h3>
+    <form method="POST" action="{{ p.key().id() }}/comment">
+        <textarea name="comment" id="" cols="30" rows="10"></textarea>
+        <input type="hidden" value="{{ token }}" name="token">
+        <input type="submit">
+    </form>
+</div>

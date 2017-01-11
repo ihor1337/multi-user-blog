@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if posts %}
+        {% for p in posts %}
+            <div class="post">
+                <div class="post-header">
+                    <h1 class="title"><a href="{{ p.key().id() }}">{{p.title}}</a></h1>
+                    <span class="author">by {{ p.owner.name }}</span>
+                </div>
+                <div class="post-body">
+                    {{p.content.replace('\n', '<br>') | safe}}
+                </div>
+                <div class="post-footer">
+                    <span class="created">Created on {{ p.created.strftime('%d %B %Y at %-H:%M %p') }}</span>
+                    <span class="comments"><a href="{{ p.key().id() }}">Comments ({{ c.all().filter('post =', p).count() }})</a></span>
+                </div>
+            </div>
+            {% endfor %}
+    {% else %}
+        <h1>There are no posts just yet!</h1>
+    {% endif %}
+
+{% endblock %}

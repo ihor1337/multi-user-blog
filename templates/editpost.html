@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form method="POST">
+    <label>Title
+        <input type="text" name="title">
+        <input type="hidden" name="token" value="{{ token }}">
+    </label>
+    <label>Body
+        <textarea name="content" id="" cols="30" rows="10"></textarea>
+    </label>
+    <input type="submit">
+</form>
+
+{% if error %}
+    <div style="font-weight: bold; color: red;">{{error}}</div>
+{% endif %}
+{% endblock %}

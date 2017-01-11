@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Blog</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,500,500i,700,700i" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Raleway:400,500,600" rel="stylesheet">
+    <link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+<nav>
+    <div class="container">
+        <div class="logo"><a href="/">The Blog</a></div>
+        <ul>
+            {% if user %}
+                <li class="nav-link"><a href="/newpost">New post</a></li>
+                <li class="nav-link"><a href="/logout">Sign out</a></li>
+            {% else %}
+                <li class="nav-link"><a href="/login">Sign in</a></li>
+                <li class="nav-link"><a href="/signup">Sign up</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+<div class="container">
+    <div class="posts">
+        {% block content %}
+        {% endblock content %}
+    </div>
+</div>
+</body>
+</html>
