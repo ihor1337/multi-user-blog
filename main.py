@@ -116,6 +116,12 @@ class BlogHandler(webapp2.RequestHandler):
                               csrf_h, cookie_val) and valid_hash(str(user.key().id()),
                                                                  csrf_h, form_val)
 
+    def get_post(self, post_id):
+        p_id = post_id.split('/')[0]
+        key = db.Key.from_path('Post', int(p_id))
+        post = db.get(key)
+        return post
+
     def initialize(self, *a, **kw):
         webapp2.RequestHandler.initialize(self, *a, **kw)
         uid = self.read_secure_cookie('user_id')
@@ -371,12 +377,6 @@ class Rating(BlogHandler):
             else:
                 self.error(403)
 
-    def get_post(self, post_id):
-        p_id = post_id.split('/')[0]
-        key = db.Key.from_path('Post', int(p_id))
-        post = db.get(key)
-        return post
-
 
 class EditPost(BlogHandler):
     def get(self, post_id):
@@ -407,6 +407,18 @@ class EditPost(BlogHandler):
         post = db.get(key)
         return post
 
+
+class DeletePost(BlogHandler):
+    def get(self, post_id):
+        self.redirect('/'+post_id)
+
+    def post(self, post_id):
+        post = self.get_post(post_id)
+        if self.user.key().id() == post.owner.key().id():
+            if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
+                post.delete()
+                self.redirect('/')
+
 app = webapp2.WSGIApplication([
     ('/', FrontPage),
     ('/signup', Register),
@@ -416,5 +428,6 @@ app = webapp2.WSGIApplication([
     ('/([0-9]+/comment)', CommentHandler),
     ('/newpost', NewPost),
     ('/([0-9]+)/rate', Rating),
-    ('/([0-9]+)/edit', EditPost)
+    ('/([0-9]+)/edit', EditPost),
+    ('/([0-9]+)/delete', DeletePost)
 ], debug=True)
