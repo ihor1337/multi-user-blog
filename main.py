@@ -254,7 +254,7 @@ class Post(db.Model):
     created = db.DateTimeProperty(auto_now_add=True)
     last_modified = db.DateTimeProperty(auto_now=True)
     owner = db.ReferenceProperty(User, required=True)
-    ratio = db.ListProperty(db.Key, required=True)
+    ratio = db.ListProperty(db.Key, required=True, indexed=True)
 
     def render(self, token):
         self.render_text = self.content.replace('\n', '<br>')
@@ -291,7 +291,6 @@ class FrontPage(BlogHandler):
         c = Comment
         self.render('front.html', posts=posts, c=c)
 
-
 class PostPage(BlogHandler):
     def get(self, post_id):
         key = db.Key.from_path('Post', int(post_id))
@@ -308,12 +307,11 @@ class PostPage(BlogHandler):
             likes = likes.rating
 
         print post.key()
-        error = self.request.get('error')
         if not post:
             self.error(404)
             return
         token = self.generate_csrf_token(self.user).split('.')[1]
-        self.render('permalink.html', post=post, comment=comment, likes=likes, token=token, error=error)
+        self.render('permalink.html', post=post, comment=comment, likes=likes, token=token)
 
 
 class NewPost(BlogHandler):
@@ -381,10 +379,33 @@ class Rating(BlogHandler):
 
 
 class EditPost(BlogHandler):
-    def get(self, _id):
+    def get(self, post_id):
         token = self.generate_csrf_token(self.user).split('.')[1]
-        self.render('editpost.html', token=token)
-        print _id
+        post = self.get_post(post_id)
+        post_author_id = post.owner.key().id()
+        current_user_id = self.user.key().id()
+        if int(post_author_id) != int(current_user_id):
+            self.redirect('/'+post_id)
+        self.render('newpost.html', token=token, post=post)
+
+    def post(self, post_id):
+        post = self.get_post(post_id)
+        post_author_id = post.owner.key().id()
+        current_user_id = self.user.key().id()
+        if int(post_author_id) == int(current_user_id):
+            new_title = self.request.get('title')
+            new_body = self.request.get('content')
+            form_token = self.request.get('token')
+            if self.validate_csrf_token(self.user, form_token):
+                post.title = new_title
+                post.content = new_body
+                post.put()
+                self.redirect('/'+post_id)
+
+    def get_post(self, post_id):
+        key = db.Key.from_path('Post', int(post_id))
+        post = db.get(key)
+        return post
 
 app = webapp2.WSGIApplication([
     ('/', FrontPage),

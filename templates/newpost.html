@@ -1,13 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<form method="POST">
+<form method="POST" onsubmit="return confirm('Are sure?');">
     <label>Title
+      {% if post %}
+        <input type="text" name="title" value="{{ post.title }}">
+      {% else %}
         <input type="text" name="title">
+      {% endif %}
         <input type="hidden" name="token" value="{{ token }}">
     </label>
     <label>Body
+        {% if post %}
+        <textarea name="content" id="" cols="30" rows="10">{{post.content.replace('\n', '<br>') | safe}}</textarea>
+        {% else %}
         <textarea name="content" id="" cols="30" rows="10"></textarea>
+        {% endif %}
     </label>
     <input type="submit">
 </form>
