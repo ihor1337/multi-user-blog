@@ -23,7 +23,6 @@ import hmac
 import webapp2
 from string import letters
 from google.appengine.ext import db
-import signal, sys
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir), autoescape=True)
@@ -117,8 +116,8 @@ class BlogHandler(webapp2.RequestHandler):
                                                                  csrf_h, form_val)
 
     def get_post(self, post_id):
-        p_id = post_id.split('/')[0]
-        key = db.Key.from_path('Post', int(p_id))
+        p = BlogParent.get_by_key_name('key')
+        key = db.Key.from_path('Post', int(post_id), parent=p.key())
         post = db.get(key)
         return post
 
@@ -150,8 +149,8 @@ def valid_hash(name, password, h):
     return h == make_hash(name, password, salt)
 
 
-# def users_key(group = 'default'):
-#     return db.Key.from_path('users', group)
+def users_key(group='default'):
+    return db.Key.from_path('users', group)
 
 
 class User(db.Model):
@@ -254,6 +253,10 @@ class Logout(BlogHandler):
         self.redirect('/')
 
 
+class BlogParent(db.Model):
+    hey = db.StringProperty(required=True, default='lol')
+
+
 class Post(db.Model):
     title = db.StringProperty(required=True)
     content = db.TextProperty(required=True)
@@ -282,14 +285,12 @@ class Comment(db.Model):
 
 class CommentHandler(BlogHandler):
     def post(self, post_id):
-        post_id = post_id.split('/')[0]
         comment = self.request.get('comment')
         author = self.user.key()
-        post = db.get(db.Key.from_path('Post', int(post_id)))
-
-        c = Comment(post=post, comment=comment, owner=author)
+        post = self.get_post(post_id)
+        c = Comment(post=post, comment=comment, owner=author, parent=post)
         c.put()
-
+        self.redirect('/'+post_id)
 
 class FrontPage(BlogHandler):
     def get(self):
@@ -297,27 +298,21 @@ class FrontPage(BlogHandler):
         c = Comment
         self.render('front.html', posts=posts, c=c)
 
+
 class PostPage(BlogHandler):
     def get(self, post_id):
-        key = db.Key.from_path('Post', int(post_id))
-        post = db.get(key)
+        post = self.get_post(post_id)
         comment = Comment.all().filter('post =', post)
-        # likes = Votes.all().filter('post =', post)
-        # likes = likes.order('-rating').get().rating
-        likes = db.GqlQuery('SELECT * FROM Votes WHERE post = :post ORDER BY rating DESC', post=post.key()).get()
-        try:
-            likes.rating
-        except:
-            likes = 0
-        else:
-            likes = likes.rating
-
-        print post.key()
+        p = BlogParent.get_by_key_name('key')
+        print p.key()
+        likes = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 ORDER BY rating DESC", p).get()
+        print likes
+        #print likes
         if not post:
             self.error(404)
             return
         token = self.generate_csrf_token(self.user).split('.')[1]
-        self.render('permalink.html', post=post, comment=comment, likes=likes, token=token)
+        self.render('permalink.html', post=post, comment=comment, likes=likes.rating, token=token)
 
 
 class NewPost(BlogHandler):
@@ -335,9 +330,10 @@ class NewPost(BlogHandler):
             user = self.user.key()
             if self.validate_csrf_token(self.user, form_token):
                 if title and body:
-                    p = Post(title=title, content=body, owner=user)
+                    parent = BlogParent.get_or_insert('key', hey='lol')
+                    p = Post(title=title, content=body, owner=user, parent=parent)
                     p.put()
-                    l = Votes(post=p.key(), voted_by=user, rating=0)
+                    l = Votes(post=p.key(), voted_by=user, rating=0, parent=p.key())
                     l.put()
                     self.redirect('/%s' % str(p.key().id()))
                 else:
@@ -349,31 +345,26 @@ class NewPost(BlogHandler):
 
 class Rating(BlogHandler):
     def get(self, post_id):
-        self.redirect('/' + post_id.split('/')[0])
+        self.redirect('/' + post_id)
 
     def post(self, post_id):
         post = self.get_post(post_id)
         post_author_id = post.owner.key().id()
         current_user_id = self.user.key().id()
-        liked_by = Votes.all().filter('voted_by =', self.user.key())\
-            .filter('post =', post).get()
+        like = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 ORDER BY rating DESC", users_key()).get()
         form_token = self.request.get('token')
-
         if int(post_author_id) == int(current_user_id):
             error = "Sorry, you can't like your own post!"
-            self.render('permalink.html', post=post, error=error)
-            #self.redirect('/' + post_id.split('/')[0] + '?error=' + error)
-        elif liked_by:
+            self.render('permalink.html', post=post, error=error, likes=like.rating)
+        elif like.voted_by.key().id() == current_user_id:
             error = "You can not like post more than once!"
-            self.render('permalink.html', post=post, error=error)
-            #self.redirect('/' + post_id.split('/')[0] + '?error=' + error)
+            self.render('permalink.html', post=post, error=error, likes=like.rating)
         else:
             if self.validate_csrf_token(self.user, form_token):
-                current_ratio = Votes.all().filter('post =', post).order('-rating')[0].rating
-                current_ratio = int(current_ratio) + 1
-                new_ratio = Votes(post=post, rating=current_ratio, voted_by=self.user.key())
+                rating = int(like.rating) + 1
+                new_ratio = Votes(post=post, rating=rating, voted_by=self.user.key(), parent=post)
                 new_ratio.put()
-                self.redirect('/' + post_id.split('/')[0])
+                self.redirect('/' + post_id)
             else:
                 self.error(403)
 
@@ -402,11 +393,6 @@ class EditPost(BlogHandler):
                 post.put()
                 self.redirect('/'+post_id)
 
-    def get_post(self, post_id):
-        key = db.Key.from_path('Post', int(post_id))
-        post = db.get(key)
-        return post
-
 
 class DeletePost(BlogHandler):
     def get(self, post_id):
@@ -414,6 +400,9 @@ class DeletePost(BlogHandler):
 
     def post(self, post_id):
         post = self.get_post(post_id)
+        print post
+        print self.user.key().id()
+        print self.user.name
         if self.user.key().id() == post.owner.key().id():
             if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
                 post.delete()
@@ -425,7 +414,7 @@ app = webapp2.WSGIApplication([
     ('/login', Login),
     ('/logout', Logout),
     ('/([0-9]+)', PostPage),
-    ('/([0-9]+/comment)', CommentHandler),
+    ('/([0-9]+)/comment', CommentHandler),
     ('/newpost', NewPost),
     ('/([0-9]+)/rate', Rating),
     ('/([0-9]+)/edit', EditPost),

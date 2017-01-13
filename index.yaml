@@ -25,3 +25,16 @@ indexes:
   - name: post
   - name: rating
     direction: desc
+
+- kind: Votes
+  ancestor: yes
+  properties:
+  - name: rating
+    direction: desc
+
+- kind: Votes
+  ancestor: yes
+  properties:
+  - name: voted_by
+  - name: rating
+    direction: desc
