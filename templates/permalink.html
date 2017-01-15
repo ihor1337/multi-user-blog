@@ -5,6 +5,17 @@
     {{post.render(token) | safe}}
     {%  for c in comment %}
         <p>{{ c.comment }}</p> <span>{{ c.owner.name }}</span>
+        <form method='POST' action="/{{ post.key().id() }}/comment/{{ c.key().id() }}/delete"
+              onsubmit="return confirm('Are you sure you want to delete this comment?');">
+            <input type="submit" value="X">
+            <input type="hidden" name="token" value="{{ token }}">
+        </form>
+        <button id="edit-comment">Edit comment</button>
+        <form method="post" action="/{{ post.key().id() }}/comment/{{ c.key().id() }}/edit"
+        id="edit-form" style="display: none">
+            <textarea name="comment" id="" cols="30" rows="10">{{ c.comment }}</textarea>
+            <input type="submit" id='save-comment' value="Save">
+        </form>
     {% endfor %}
 
 
@@ -14,8 +25,8 @@
     </form>
     {{ likes }}
 
-    <a href="{{ post.key().id() }}/edit">Edit this post</a>
-     <form method='POST' action="{{ post.key().id()}}/delete" onsubmit="return confirm('Are you sure you want to delete this post?');">
+    <a href="/{{ post.key().id() }}/edit">Edit this post</a>
+     <form method='POST' action="/{{ post.key().id()}}/delete" onsubmit="return confirm('Are you sure you want to delete this post?');">
         <input type="submit" value="Delete post">
         <input type="hidden" name="token" value="{{ token }}">
     </form>

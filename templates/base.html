@@ -28,5 +28,25 @@
         {% endblock content %}
     </div>
 </div>
+<script>
+    (function(){
+       var editBtn = document.getElementById('edit-comment');
+       var saveBtn = document.getElementById('save-comment');
+       var form = document.getElementById('edit-form');
+       editBtn.addEventListener('click', showForm);
+       saveBtn.addEventListener('click', hideForm);
+       function showForm() {
+            if (form.style.display == 'block'){
+                form.style.display = 'none';
+            }else {
+                form.style.display = 'block';
+            }
+       }
+
+       function hideForm() {
+           form.style.display = 'none';
+       }
+    })()
+</script>
 </body>
 </html>

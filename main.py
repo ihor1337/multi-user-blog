@@ -23,6 +23,7 @@ import hmac
 import webapp2
 from string import letters
 from google.appengine.ext import db
+import time
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir), autoescape=True)
@@ -294,9 +295,13 @@ class CommentHandler(BlogHandler):
 
 class FrontPage(BlogHandler):
     def get(self):
-        posts = Post.all().order('-created')
+        #posts = Post.all().order('-created')
+        p = db.Query(Post)
+        a = BlogParent.get_or_insert('key', hey='lol')
+        p.ancestor(a.key())
+        p.order('-created')
         c = Comment
-        self.render('front.html', posts=posts, c=c)
+        self.render('front.html', posts=p, c=c)
 
 
 class PostPage(BlogHandler):
@@ -351,7 +356,7 @@ class Rating(BlogHandler):
         post = self.get_post(post_id)
         post_author_id = post.owner.key().id()
         current_user_id = self.user.key().id()
-        like = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 ORDER BY rating DESC", users_key()).get()
+        like = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 ORDER BY rating DESC", post).get()
         form_token = self.request.get('token')
         if int(post_author_id) == int(current_user_id):
             error = "Sorry, you can't like your own post!"
@@ -408,6 +413,33 @@ class DeletePost(BlogHandler):
                 post.delete()
                 self.redirect('/')
 
+
+class DeleteComment(BlogHandler):
+    def get(self, post_id, comment_id):
+        self.redirect('/'+post_id)
+
+    def post(self, post_id, comment_id):
+        post = self.get_post(post_id)
+        key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
+        comment = db.get(key)
+        if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
+            comment.delete()
+            self.redirect('/'+post_id)
+
+
+class EditComment(BlogHandler):
+    def get(self, post_id, comment_id):
+        self.redirect('/' + post_id)
+
+    def post(self, post_id, comment_id):
+        post = self.get_post(post_id)
+        key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
+        new_comment = self.request.get('comment')
+        comment = db.get(key)
+        comment.comment = new_comment
+        comment.put()
+        self.redirect('/' + post_id)
+
 app = webapp2.WSGIApplication([
     ('/', FrontPage),
     ('/signup', Register),
@@ -418,5 +450,7 @@ app = webapp2.WSGIApplication([
     ('/newpost', NewPost),
     ('/([0-9]+)/rate', Rating),
     ('/([0-9]+)/edit', EditPost),
-    ('/([0-9]+)/delete', DeletePost)
+    ('/([0-9]+)/delete', DeletePost),
+    ('/([0-9]+)/comment/([0-9]+)/delete', DeleteComment),
+    ('/([0-9]+)/comment/([0-9]+)/edit', EditComment),
 ], debug=True)
