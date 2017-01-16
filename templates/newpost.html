@@ -1,26 +1,24 @@
 {% extends "base.html" %}
 
 {% block content %}
-<form method="POST" onsubmit="return confirm('Are sure?');">
-    <label>Title
-      {% if post %}
-        <input type="text" name="title" value="{{ post.title }}">
-      {% else %}
-        <input type="text" name="title">
-      {% endif %}
-        <input type="hidden" name="token" value="{{ token }}">
-    </label>
-    <label>Body
-        {% if post %}
-        <textarea name="content" id="" cols="30" rows="10">{{post.content.replace('\n', '<br>') | safe}}</textarea>
-        {% else %}
-        <textarea name="content" id="" cols="30" rows="10"></textarea>
-        {% endif %}
-    </label>
-    <input type="submit">
-</form>
+    <div class="post">
+        <form method="POST" onsubmit="return confirm('Are sure?');">
+            {% if post %}
+                <input type="text" name="title" value="{{ post.title }}">
+            {% else %}
+                <input type="text" name="title" placeholder="Title">
+            {% endif %}
+            <input type="hidden" name="token" value="{{ token }}">
+            {% if post %}
+                <textarea name="content" id="" cols="30" rows="10">{{post.content.replace('\n', '<br>') | safe}}</textarea>
+            {% else %}
+                <textarea name="content" id="" cols="30" rows="10" placeholder="Write your post here...."></textarea>
+            {% endif %}
+            <input type="submit" class="btn" value="Post it">
+        </form>
+    </div>
 
 {% if error %}
-    <div style="font-weight: bold; color: red;">{{error}}</div>
+    <span class="error">{{error}}</span>
 {% endif %}
 {% endblock %}
