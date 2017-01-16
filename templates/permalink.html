@@ -2,7 +2,24 @@
 {% extends "base.html" %}
 
 {% block content %}
-    {{post.render(token) | safe}}
+
+    <div class="post">
+    <div class="post-title">
+       <a href="{{ post.key().id() }}">{{post.title}}</a>
+    </div>
+    <div class="post-body">
+        {{post.content.replace('\n', '<br>') | safe}}
+    </div>
+    <span>Post author: {{ post.owner.name }}</span>
+
+    <h3>Leave a comment</h3>
+    <form method="POST" action="{{ post.key().id() }}/comment">
+        <textarea name="comment" id="" cols="30" rows="10"></textarea>
+        <input type="hidden" value="{{ token }}" name="token">
+        <input type="submit">
+    </form>
+</div>
+
     {%  for c in comment %}
         <p>{{ c.comment }}</p> <span>{{ c.owner.name }}</span>
         <form method='POST' action="/{{ post.key().id() }}/comment/{{ c.key().id() }}/delete"

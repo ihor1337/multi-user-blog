@@ -266,11 +266,6 @@ class Post(db.Model):
     owner = db.ReferenceProperty(User, required=True)
     ratio = db.ListProperty(db.Key, required=True, indexed=True)
 
-    def render(self, token):
-        self.render_text = self.content.replace('\n', '<br>')
-        return render_str("post.html", p=self, token=token)
-
-
 class Votes(db.Model):
     rating = db.IntegerProperty(default=0)
     post = db.ReferenceProperty(Post, required=True)
