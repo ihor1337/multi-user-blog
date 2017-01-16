@@ -405,9 +405,6 @@ class DeletePost(BlogHandler):
 
     def post(self, post_id):
         post = self.get_post(post_id)
-        print post
-        print self.user.key().id()
-        print self.user.name
         if self.user.key().id() == post.owner.key().id():
             if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
                 post.delete()
@@ -420,9 +417,9 @@ class DeleteComment(BlogHandler):
 
     def post(self, post_id, comment_id):
         post = self.get_post(post_id)
-        key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
-        comment = db.get(key)
         if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
+            key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
+            comment = db.get(key)
             comment.delete()
             self.redirect('/'+post_id)
 
@@ -433,12 +430,13 @@ class EditComment(BlogHandler):
 
     def post(self, post_id, comment_id):
         post = self.get_post(post_id)
-        key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
-        new_comment = self.request.get('comment')
-        comment = db.get(key)
-        comment.comment = new_comment
-        comment.put()
-        self.redirect('/' + post_id)
+        if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
+            key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
+            new_comment = self.request.get('comment')
+            comment = db.get(key)
+            comment.comment = new_comment
+            comment.put()
+            self.redirect('/' + post_id)
 
 app = webapp2.WSGIApplication([
     ('/', FrontPage),
