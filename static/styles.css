@@ -342,7 +342,8 @@ nav .container{
     outline: none;
 }
 
-.post, .post input[type='text'], .post textarea{
+.post, .post input[type='text'],
+.post textarea{
     width: 100%;
 }
 
@@ -350,7 +351,8 @@ nav .container{
     width: inherit;
 }
 
-.post input[type='text']:focus, .post textarea:focus{
+.post input[type='text']:focus,
+.post textarea:focus{
     outline: none;
     box-shadow: 0 0 10px 0 skyblue;
     border-color: dodgerblue;

@@ -392,11 +392,14 @@ class EditPost(BlogHandler):
             new_title = self.request.get('title')
             new_body = self.request.get('content')
             form_token = self.request.get('token')
-            if self.validate_csrf_token(self.user, form_token):
-                post.title = new_title
-                post.content = new_body
-                post.put()
-                self.redirect('/'+post_id)
+            if new_title and new_body:
+                if self.validate_csrf_token(self.user, form_token):
+                    post.title = new_title
+                    post.content = new_body
+                    post.put()
+                    self.redirect('/'+post_id)
+            else:
+                self.render('newpost.html', post=post, error='Please add title and body')
 
 
 class DeletePost(BlogHandler):
