@@ -244,7 +244,7 @@ class Login(BlogHandler):
             self.login(u)
             self.redirect('/')
         else:
-            msg = 'Invalid login'
+            msg = 'Invalid login or password'
             self.render('login.html', error=msg)
 
 

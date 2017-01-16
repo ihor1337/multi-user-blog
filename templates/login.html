@@ -3,18 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
-    <link rel="stylesheet" href="static/login.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,500,500i,700,700i" rel="stylesheet">
+    <link rel="stylesheet" href="/static/login.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="login-wrapper">
-        <form method="post">
-            <input type="text" name="username" value="{{username}}" placeholder="Username">
-            <input type="password" name="password" value="" placeholder="Password">
-            <input type="submit">
-            <div class="error">
-                {{error}}
-            </div>
-        </form>
+        <div class="login">
+
+            <form method="post">
+                <div class="input-wrapper">
+                    <input type="text" name="username" value="{{username}}" placeholder="Username">
+                    <span class="underline"></span>
+                </div>
+                <div class="input-wrapper">
+                    <input type="password" name="password" value="" placeholder="Password">
+                    <span class="underline"></span>
+                </div>
+                <input type="submit" class="btn">
+                <div class="error">
+                    {{error}}
+                </div>
+            </form>
+        </div>
     </div>
 
 
