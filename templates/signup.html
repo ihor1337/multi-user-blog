@@ -3,62 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <title>Signup</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,500,500i,700,700i" rel="stylesheet">
+    <link rel="stylesheet" href="/static/login.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>SIGN UP NOW!!!</h1>
-      <h2>Signup</h2>
-    <form method="post">
-      <table>
-        <tr>
-          <td class="label">
-            Username
-          </td>
-          <td>
-            <input type="text" name="username" value="{{username}}">
-          </td>
-          <td class="error">
-            {{error_username}}
-          </td>
-        </tr>
+<div class="signup-wrapper">
 
-        <tr>
-          <td class="label">
-            Password
-          </td>
-          <td>
-            <input type="password" name="password" value="">
-          </td>
-          <td class="error">
-            {{error_password}}
-          </td>
-        </tr>
+    <div class="signup">
+        <div class="signup-caption">
+            <h2>Signup</h2>
+        </div>
+        <form method="post">
+            <div class="input-wrapper">
+                <input type="text" name="username" value="{{username}}"
+                       placeholder="Username">
+                <span class="underline"></span>
+            </div>
+            <span class="error">
+                {{error_username}}
+            </span>
+            <div class="input-wrapper">
+                <input type="password" name="password" value="" placeholder="Password">
+                <span class="underline"></span>
+            </div>
+            <span class="error">
+                {{error_password}}
+            </span>
+            <div class="input-wrapper">
+                <input type="password" name="verify" value="" placeholder="Verify password">
+                <span class="underline"></span>
+            </div>
+            <span class="error">
+                {{error_verify}}
+            </span>
+            <div class="input-wrapper">
+                <input type="text" name="email" value="{{email}}" placeholder="Email (optional)">
+                <span class="underline"></span>
+            </div>
+            <span class="error">
+                {{error_email}}
+            </span>
+            <input type="submit" class="btn">
+        </form>
+    </div>
+</div>
 
-        <tr>
-          <td class="label">
-            Verify Password
-          </td>
-          <td>
-            <input type="password" name="verify" value="">
-          </td>
-          <td class="error">
-            {{error_verify}}
-          </td>
-        </tr>
-
-        <tr>
-          <td class="label">
-            Email (optional)
-          </td>
-          <td>
-            <input type="text" name="email" value="{{email}}">
-          </td>
-          <td class="error">
-            {{error_email}}
-          </td>
-        </tr>
-      </table>
-
-      <input type="submit">
-    </form>
 </body>
 </html>

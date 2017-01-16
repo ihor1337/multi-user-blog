@@ -208,3 +208,25 @@ nav .container{
 .comments:hover{
     text-decoration: underline;
 }
+
+.btn{
+    border: none;
+    padding: 10px 20px;
+    background-color: skyblue;
+    cursor: pointer;
+    -webkit-transition: all .3s;
+    -moz-transition: all .3s;
+    -ms-transition: all .3s;
+    -o-transition: all .3s;
+    transition: all .3s;
+    color: #ffffff;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    border-radius: 5px;
+    font-weight: 500;
+}
+
+.btn:hover{
+    box-shadow: 0 3px 5px #888888;
+    background-color: deepskyblue;
+}
