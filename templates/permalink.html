@@ -19,6 +19,7 @@
                     <input type="hidden" name="token" value="{{ token }}">
                 </form>
             </div>
+            {% if user.name == post.owner.name %}
             <div class="edit-post">
                 <a href="/{{ post.key().id() }}/edit"><button class='btn'>Edit</button></a>
             </div>
@@ -28,6 +29,7 @@
                     <input type="hidden" name="token" value="{{ token }}">
                 </form>
             </div>
+            {% endif %}
         </div>
         {% if error %}
             <span class="error">{{ error }}</span>
@@ -41,6 +43,7 @@
                 <div class="comment-body">
                     <p>{{ c.comment }}</p>
                 </div>
+                {% if user.name == c.owner.name %}
                 <div class="comment-controls">
                     <div class="edit-comment">
                         <button class='btn' id="edit-comment-{{ loop.index }}">Edit</button>
@@ -53,6 +56,7 @@
                         </form>
                     </div>
                 </div>
+                {% endif %}
             </div>
         </div>
 
