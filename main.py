@@ -23,7 +23,6 @@ import hmac
 import webapp2
 from string import letters
 from google.appengine.ext import db
-import time
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir), autoescape=True)
@@ -35,21 +34,16 @@ def render_str(template, **params):
 
 
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+PASS_RE = re.compile(r"^.{3,20}$")
+EMAIL_RE = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
 
 
 def valid_username(username):
     return username and USER_RE.match(username)
 
 
-PASS_RE = re.compile(r"^.{3,20}$")
-
-
 def valid_password(password):
     return password and PASS_RE.match(password)
-
-
-EMAIL_RE = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
-
 
 def valid_email(email):
     return not email or EMAIL_RE.match(email)
@@ -99,6 +93,7 @@ class BlogHandler(webapp2.RequestHandler):
     def logout(self):
         self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
 
+# functions to generate and validate csrf tokens to prevent cross site request forgery
     def generate_csrf_token(self, user):
         csrf_h = csrf_secret_hash(str(user.key().id()))
         token = make_hash(str(user.key().id()), csrf_h)
@@ -133,6 +128,7 @@ class BlogHandler(webapp2.RequestHandler):
 
     def get_user(self):
         return self.user
+
 
 def make_salt(length=5):
     return ''.join(random.choice(letters) for x in xrange(length))
@@ -265,6 +261,7 @@ class Post(db.Model):
     last_modified = db.DateTimeProperty(auto_now=True)
     owner = db.ReferenceProperty(User, required=True)
     ratio = db.ListProperty(db.Key, required=True, indexed=True)
+
 
 class Votes(db.Model):
     rating = db.IntegerProperty(default=0)
@@ -451,7 +448,6 @@ class EditComment(BlogHandler):
                 comment.comment = new_comment
                 comment.put()
                 self.redirect('/' + post_id)
-                print 'I am here!'
             else:
                 comment_error = "Sorry, you can not post an empty comment!"
                 token = self.generate_csrf_token(self.user).split('.')[1]
