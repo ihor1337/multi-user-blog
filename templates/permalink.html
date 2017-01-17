@@ -43,7 +43,7 @@
                 </div>
                 <div class="comment-controls">
                     <div class="edit-comment">
-                        <button class='btn' id="edit-comment">Edit</button>
+                        <button class='btn' id="edit-comment-{{ loop.index }}">Edit</button>
                     </div>
                     <div class="delete-comment">
                         <form method='POST' action="/{{ post.key().id() }}/comment/{{ c.key().id() }}/delete"
@@ -57,9 +57,9 @@
         </div>
 
         <form method="post" action="/{{ post.key().id() }}/comment/{{ c.key().id() }}/edit"
-        id="edit-form" style="display: none">
+        id="edit-form-{{ loop.index }}" style="display: none">
             <textarea name="comment" id="" cols="30" rows="10">{{ c.comment }}</textarea>
-            <input type="submit" id='save-comment' value="Save" class="btn">
+            <input type="submit" id='save-comment-{{ loop.index }}' value="Save" class="btn">
             <input type="hidden" name="token" value="{{ token }}">
         </form>
     {% endfor %}

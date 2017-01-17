@@ -30,21 +30,32 @@
 </div>
 <script>
     (function(){
-       var editBtn = document.getElementById('edit-comment');
-       var saveBtn = document.getElementById('save-comment');
-       var form = document.getElementById('edit-form');
-       editBtn.addEventListener('click', showForm);
-       saveBtn.addEventListener('click', hideForm);
-       function showForm() {
-            if (form.style.display == 'block'){
-                form.style.display = 'none';
-            }else {
-                form.style.display = 'block';
-            }
+       var editBtns = document.querySelectorAll('[id^="edit-comment-"]');
+       var saveBtns = document.querySelectorAll('[id^="save-comment-"]');
+       var forms = document.querySelectorAll('[id^="edit-form-"]');
+       addEvents(editBtns, showForm);
+       addEvents(saveBtns, hideForm);
+
+       function showForm(e) {
+           var id = e.target.id.split('-')[2];
+           var form = forms[id-1];
+           if (form.style.display == 'none'){
+               form.style.display = 'block';
+           }else{
+               form.style.display = 'none'
+           }
        }
 
-       function hideForm() {
+       function hideForm(e) {
+           var id = e.target.id.split('-')[2];
+           var form = forms[id-1];
            form.style.display = 'none';
+       }
+
+       function addEvents(buttons, fn) {
+           buttons.forEach(function (button) {
+               button.addEventListener('click', fn)
+           })
        }
     })()
 </script>
