@@ -14,7 +14,7 @@
 
         <div class="post-controls">
             <div class="rating">
-                <form method='POST' action="{{ post.key().id()}}/rate">
+                <form method='POST' action="/{{ post.key().id()}}/rate">
                     <button class="btn like-btn" type="submit">&#10084; <span>{{ likes }}</span></button>
                     <input type="hidden" name="token" value="{{ token }}">
                 </form>
@@ -56,17 +56,17 @@
             </div>
         </div>
 
-
         <form method="post" action="/{{ post.key().id() }}/comment/{{ c.key().id() }}/edit"
         id="edit-form" style="display: none">
             <textarea name="comment" id="" cols="30" rows="10">{{ c.comment }}</textarea>
-            <input type="submit" id='save-comment' value="Save">
+            <input type="submit" id='save-comment' value="Save" class="btn">
+            <input type="hidden" name="token" value="{{ token }}">
         </form>
     {% endfor %}
 
     <div class="leave-comment">
         <h3>Leave a comment:</h3>
-        <form method="POST" action="{{ post.key().id() }}/comment">
+        <form method="POST" action="/{{ post.key().id() }}/comment">
             <textarea name="comment" id="" cols="30" rows="10"></textarea>
             <input type="hidden" value="{{ token }}" name="token">
             {% if comment_error %}

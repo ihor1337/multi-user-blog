@@ -282,22 +282,25 @@ class Comment(db.Model):
 class CommentHandler(BlogHandler):
     def post(self, post_id):
         comment = self.request.get('comment')
-        token = self.request.get('token')
+        form_token = self.request.get('token')
         author = self.user.key()
         post = self.get_post(post_id)
         c = Comment.all().filter('post =', post)
         p = BlogParent.get_by_key_name('key')
         likes = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 AND post = :2 ORDER BY rating DESC", p,
                             post).get()
-        if comment:
-            c = Comment(post=post, comment=c, owner=author, parent=post)
-            c.put()
-            self.redirect('/' + post_id)
+        if self.validate_csrf_token(self.user, form_token):
+            if comment:
+                c = Comment(post=post, comment=comment, owner=author, parent=post)
+                c.put()
+                self.redirect('/' + post_id)
+            else:
+                comment_error = "Sorry, you can not post an empty comment!"
+                token = self.generate_csrf_token(self.user).split('.')[1]
+                self.render('permalink.html', post=post, comment=c, likes=likes.rating, token=token,
+                            comment_error=comment_error)
         else:
-            comment_error = "Sorry, you can not post an empty comment!"
-            self.render('permalink.html', post=post, comment=c, likes=likes.rating, token=token,
-                        comment_error=comment_error)
-
+            self.error(403)
 
 
 class FrontPage(BlogHandler):
@@ -438,13 +441,24 @@ class EditComment(BlogHandler):
 
     def post(self, post_id, comment_id):
         post = self.get_post(post_id)
+        new_comment = self.request.get('comment')
+        c = Comment.all().filter('post =', post)
+        likes = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 ORDER BY rating DESC", post).get()
         if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
-            key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
-            new_comment = self.request.get('comment')
-            comment = db.get(key)
-            comment.comment = new_comment
-            comment.put()
-            self.redirect('/' + post_id)
+            if new_comment:
+                key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
+                comment = db.get(key)
+                comment.comment = new_comment
+                comment.put()
+                self.redirect('/' + post_id)
+                print 'I am here!'
+            else:
+                comment_error = "Sorry, you can not post an empty comment!"
+                token = self.generate_csrf_token(self.user).split('.')[1]
+                self.render('permalink.html', post=post, comment=c, likes=likes.rating, token=token,
+                            comment_error=comment_error)
+        else:
+            self.error(403)
 
 app = webapp2.WSGIApplication([
     ('/', FrontPage),
