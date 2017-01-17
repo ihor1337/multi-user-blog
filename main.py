@@ -282,15 +282,26 @@ class Comment(db.Model):
 class CommentHandler(BlogHandler):
     def post(self, post_id):
         comment = self.request.get('comment')
+        token = self.request.get('token')
         author = self.user.key()
         post = self.get_post(post_id)
-        c = Comment(post=post, comment=comment, owner=author, parent=post)
-        c.put()
-        self.redirect('/'+post_id)
+        c = Comment.all().filter('post =', post)
+        p = BlogParent.get_by_key_name('key')
+        likes = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 AND post = :2 ORDER BY rating DESC", p,
+                            post).get()
+        if comment:
+            c = Comment(post=post, comment=c, owner=author, parent=post)
+            c.put()
+            self.redirect('/' + post_id)
+        else:
+            comment_error = "Sorry, you can not post an empty comment!"
+            self.render('permalink.html', post=post, comment=c, likes=likes.rating, token=token,
+                        comment_error=comment_error)
+
+
 
 class FrontPage(BlogHandler):
     def get(self):
-        #posts = Post.all().order('-created')
         p = db.Query(Post)
         a = BlogParent.get_or_insert('key', hey='lol')
         p.ancestor(a.key())
@@ -304,10 +315,8 @@ class PostPage(BlogHandler):
         post = self.get_post(post_id)
         comment = Comment.all().filter('post =', post)
         p = BlogParent.get_by_key_name('key')
-        print p.key()
-        likes = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 ORDER BY rating DESC", p).get()
-        print likes
-        #print likes
+        likes = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 AND post = :2 ORDER BY rating DESC",
+                            p, post).get()
         if not post:
             self.error(404)
             return
@@ -351,14 +360,15 @@ class Rating(BlogHandler):
         post = self.get_post(post_id)
         post_author_id = post.owner.key().id()
         current_user_id = self.user.key().id()
+        comment = Comment.all().filter('post =', post)
         like = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 ORDER BY rating DESC", post).get()
         form_token = self.request.get('token')
         if int(post_author_id) == int(current_user_id):
             error = "Sorry, you can't like your own post!"
-            self.render('permalink.html', post=post, error=error, likes=like.rating)
+            self.render('permalink.html', post=post, error=error, likes=like.rating, comment=comment)
         elif like.voted_by.key().id() == current_user_id:
             error = "You can not like post more than once!"
-            self.render('permalink.html', post=post, error=error, likes=like.rating)
+            self.render('permalink.html', post=post, error=error, likes=like.rating, comment=comment)
         else:
             if self.validate_csrf_token(self.user, form_token):
                 rating = int(like.rating) + 1

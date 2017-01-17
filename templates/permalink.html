@@ -4,30 +4,59 @@
 {% block content %}
 
     <div class="post">
-    <div class="post-title">
-       <a href="{{ post.key().id() }}">{{post.title}}</a>
-    </div>
-    <div class="post-body">
-        {{post.content.replace('\n', '<br>') | safe}}
-    </div>
-    <span>Post author: {{ post.owner.name }}</span>
+        <div class="post-header">
+            <h1 class="title">{{post.title}}</h1>
+            <span class="author">by {{ post.owner.name }}</span>
+        </div>
+        <div class="post-body">
+            {{post.content.replace('\n', '<br>') | safe}}
+        </div>
 
-    <h3>Leave a comment</h3>
-    <form method="POST" action="{{ post.key().id() }}/comment">
-        <textarea name="comment" id="" cols="30" rows="10"></textarea>
-        <input type="hidden" value="{{ token }}" name="token">
-        <input type="submit">
-    </form>
-</div>
-
+        <div class="post-controls">
+            <div class="rating">
+                <form method='POST' action="{{ post.key().id()}}/rate">
+                    <button class="btn like-btn" type="submit">&#10084; <span>{{ likes }}</span></button>
+                    <input type="hidden" name="token" value="{{ token }}">
+                </form>
+            </div>
+            <div class="edit-post">
+                <a href="/{{ post.key().id() }}/edit"><button class='btn'>Edit</button></a>
+            </div>
+            <div class="delete-post">
+                <form method='POST' action="/{{ post.key().id()}}/delete" onsubmit="return confirm('Are you sure you want to delete this post?');">
+                    <input class='btn' type="submit" value="Delete">
+                    <input type="hidden" name="token" value="{{ token }}">
+                </form>
+            </div>
+        </div>
+        {% if error %}
+            <span class="error">{{ error }}</span>
+        {% endif %}
     {%  for c in comment %}
-        <p>{{ c.comment }}</p> <span>{{ c.owner.name }}</span>
-        <form method='POST' action="/{{ post.key().id() }}/comment/{{ c.key().id() }}/delete"
-              onsubmit="return confirm('Are you sure you want to delete this comment?');">
-            <input type="submit" value="X">
-            <input type="hidden" name="token" value="{{ token }}">
-        </form>
-        <button id="edit-comment">Edit comment</button>
+        <div class="comment-wrapper">
+            <div class="comment">
+                <div class="comment-author">
+                    <h4>{{ c.owner.name }}:</h4>
+                </div>
+                <div class="comment-body">
+                    <p>{{ c.comment }}</p>
+                </div>
+                <div class="comment-controls">
+                    <div class="edit-comment">
+                        <button class='btn' id="edit-comment">Edit</button>
+                    </div>
+                    <div class="delete-comment">
+                        <form method='POST' action="/{{ post.key().id() }}/comment/{{ c.key().id() }}/delete"
+                              onsubmit="return confirm('Are you sure you want to delete this comment?');">
+                            <input class='btn' type="submit" value="Delete">
+                            <input type="hidden" name="token" value="{{ token }}">
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         <form method="post" action="/{{ post.key().id() }}/comment/{{ c.key().id() }}/edit"
         id="edit-form" style="display: none">
             <textarea name="comment" id="" cols="30" rows="10">{{ c.comment }}</textarea>
@@ -35,19 +64,20 @@
         </form>
     {% endfor %}
 
+    <div class="leave-comment">
+        <h3>Leave a comment:</h3>
+        <form method="POST" action="{{ post.key().id() }}/comment">
+            <textarea name="comment" id="" cols="30" rows="10"></textarea>
+            <input type="hidden" value="{{ token }}" name="token">
+            {% if comment_error %}
+                <span class="error">{{ comment_error }}</span>
+            {% endif %}
+            <input type="submit" class="btn" value="comment">
+        </form>
+    </div>
 
-    <form method='POST' action="{{ post.key().id()}}/rate">
-        <input type="submit" value="&#10084;">
-        <input type="hidden" name="token" value="{{ token }}">
-    </form>
-    {{ likes }}
 
-    <a href="/{{ post.key().id() }}/edit">Edit this post</a>
-     <form method='POST' action="/{{ post.key().id()}}/delete" onsubmit="return confirm('Are you sure you want to delete this post?');">
-        <input type="submit" value="Delete post">
-        <input type="hidden" name="token" value="{{ token }}">
-    </form>
-    {% if error %}
-        <p style="color:red;">{{ error }}</p>
-    {% endif %}
+    </div>
+
+
 {% endblock %}

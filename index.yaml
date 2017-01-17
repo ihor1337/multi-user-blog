@@ -35,6 +35,20 @@ indexes:
 - kind: Votes
   ancestor: yes
   properties:
+  - name: Post
+  - name: rating
+    direction: desc
+
+- kind: Votes
+  ancestor: yes
+  properties:
+  - name: post
+  - name: rating
+    direction: desc
+
+- kind: Votes
+  ancestor: yes
+  properties:
   - name: rating
     direction: desc
 
