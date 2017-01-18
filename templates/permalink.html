@@ -63,7 +63,10 @@
         <form method="post" action="/{{ post.key().id() }}/comment/{{ c.key().id() }}/edit"
         id="edit-form-{{ loop.index }}" style="display: none">
             <textarea name="comment" id="" cols="30" rows="10">{{ c.comment }}</textarea>
-            <input type="submit" id='save-comment-{{ loop.index }}' value="Save" class="btn">
+            <div class="edit-controls">
+                <input type="submit" id='save-comment-{{ loop.index }}' value="Save" class="btn">
+                <a href="/{{ post.key().id() }}" class="btn">Cancel</a>
+            </div>
             <input type="hidden" name="token" value="{{ token }}">
         </form>
     {% endfor %}

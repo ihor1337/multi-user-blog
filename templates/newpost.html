@@ -14,7 +14,12 @@
             {% else %}
                 <textarea name="content" id="" cols="30" rows="10" placeholder="Write your post here...."></textarea>
             {% endif %}
-            <input type="submit" class="btn" value="Post it">
+            <div class="edit-controls">
+                <input type="submit" class="btn" value="Post">
+                {% if post %}
+                <a href="/{{ post.key().id() }}" class="btn" id="cancel-edit-post">Cancel</a>
+                {% endif %}
+            </div>
         </form>
     </div>
 

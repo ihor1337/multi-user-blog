@@ -405,11 +405,15 @@ nav .container{
     font-weight: 500;
 }
 
-.post-controls, .comment-controls{
+.post-controls, .comment-controls, .edit-controls{
     display: flex;
     max-width: 100%;
     width: 30%;
     justify-content: space-between;
+}
+
+.edit-controls{
+    width: 22%;
 }
 
 .post-controls{
@@ -417,7 +421,7 @@ nav .container{
 }
 
 .comment-controls{
-    width: 21%;
+    width: 22%;
     padding-top: 10px;
 }
 
