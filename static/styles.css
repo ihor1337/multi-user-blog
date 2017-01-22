@@ -459,3 +459,7 @@ nav .container{
 .post .error{
     top: -10px;
 }
+
+.posts>.login-wrapper, .posts>.signup-wrapper{
+    margin-top: -80px;
+}
