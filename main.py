@@ -115,7 +115,19 @@ class BlogHandler(webapp2.RequestHandler):
         p = BlogParent.get_by_key_name('key')
         key = db.Key.from_path('Post', int(post_id), parent=p.key())
         post = db.get(key)
-        return post
+        if post:
+            return post
+        else:
+            return False
+
+    def get_comment(self, post_id, comment_id):
+        post = self.get_post(post_id)
+        key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
+        comment = db.get(key)
+        if post and comment:
+            return comment
+        else:
+            return False
 
     def initialize(self, *a, **kw):
         webapp2.RequestHandler.initialize(self, *a, **kw)
@@ -128,6 +140,57 @@ class BlogHandler(webapp2.RequestHandler):
 
     def get_user(self):
         return self.user
+
+
+def post_exists(f):
+    def wrap(self, post_id, *args):
+        post = self.get_post(post_id)
+        if post:
+            return f(self, post_id, *args)
+        else:
+            self.error(404)
+    return wrap
+
+
+def comment_exists(f):
+    def wrap(self, post_id, comment_id):
+        comment = self.get_comment(post_id, comment_id)
+        if comment:
+            return f(self, post_id, comment_id)
+        else:
+            self.redirect('/'+post_id)
+    return wrap
+
+
+def user_logged_in(f):
+    def wrap(self, *args, **kwargs):
+        user = self.user
+        if not user:
+            self.redirect('/login')
+        else:
+            return f(self, *args, **kwargs)
+    return wrap
+
+
+def user_owns_post(f):
+    def wrap(self, post_id, *args):
+        user = self.user
+        post = self.get_post(post_id)
+        if user.name == post.owner.name:
+            return f(self, post_id, *args)
+        else:
+            self.redirect('/'+post_id)
+    return wrap
+
+
+def user_owns_comment(f):
+    def wrap(self, post_id, comment_id):
+        comment = self.get_comment(post_id, comment_id)
+        if self.user.name == comment.owner.name:
+            return f(self, post_id, comment_id)
+        else:
+            self.redirect('/'+post_id)
+    return wrap
 
 
 def make_salt(length=5):
@@ -277,6 +340,8 @@ class Comment(db.Model):
 
 
 class CommentHandler(BlogHandler):
+    @user_logged_in
+    @post_exists
     def post(self, post_id):
         comment = self.request.get('comment')
         form_token = self.request.get('token')
@@ -311,6 +376,7 @@ class FrontPage(BlogHandler):
 
 
 class PostPage(BlogHandler):
+    @post_exists
     def get(self, post_id):
         post = self.get_post(post_id)
         comment = Comment.all().filter('post =', post)
@@ -320,42 +386,47 @@ class PostPage(BlogHandler):
         if not post:
             self.error(404)
             return
-        token = self.generate_csrf_token(self.user).split('.')[1]
-        self.render('permalink.html', post=post, comment=comment, likes=likes.rating, token=token)
+        if self.get_user():
+            token = self.generate_csrf_token(self.user).split('.')[1]
+            self.render('permalink.html', post=post, comment=comment, likes=likes.rating, token=token)
+        else:
+            self.render('permalink.html', post=post, comment=comment, likes=likes.rating)
 
 
 class NewPost(BlogHandler):
+    @user_logged_in
     def get(self):
         token = self.generate_csrf_token(self.user).split('.')[1]
         self.render('newpost.html', token=token)
 
+    @user_logged_in
     def post(self):
-        if not self.user:
-            self.redirect('/login')
-        else:
-            title = self.request.get('title')
-            body = self.request.get('content')
-            form_token = self.request.get('token')
-            user = self.user.key()
-            if self.validate_csrf_token(self.user, form_token):
-                if title and body:
-                    parent = BlogParent.get_or_insert('key', hey='lol')
-                    p = Post(title=title, content=body, owner=user, parent=parent)
-                    p.put()
-                    l = Votes(post=p.key(), voted_by=user, rating=0, parent=p.key())
-                    l.put()
-                    self.redirect('/%s' % str(p.key().id()))
-                else:
-                    error = "Please specify both title and body of the post!"
-                    self.render('newpost.html', title=title, body=body, error=error)
+        title = self.request.get('title')
+        body = self.request.get('content')
+        form_token = self.request.get('token')
+        user = self.user.key()
+        if self.validate_csrf_token(self.user, form_token):
+            if title and body:
+                parent = BlogParent.get_or_insert('key', hey='lol')
+                p = Post(title=title, content=body, owner=user, parent=parent)
+                p.put()
+                l = Votes(post=p.key(), voted_by=user, rating=0, parent=p.key())
+                l.put()
+                self.redirect('/%s' % str(p.key().id()))
             else:
-                self.error(403)
+                error = "Please specify both title and body of the post!"
+                self.render('newpost.html', title=title, body=body, error=error)
+        else:
+            self.error(403)
 
 
 class Rating(BlogHandler):
+    @post_exists
     def get(self, post_id):
         self.redirect('/' + post_id)
 
+    @user_logged_in
+    @post_exists
     def post(self, post_id):
         post = self.get_post(post_id)
         post_author_id = post.owner.key().id()
@@ -380,62 +451,70 @@ class Rating(BlogHandler):
 
 
 class EditPost(BlogHandler):
+    @user_logged_in
+    @post_exists
+    @user_owns_post
     def get(self, post_id):
         token = self.generate_csrf_token(self.user).split('.')[1]
         post = self.get_post(post_id)
-        post_author_id = post.owner.key().id()
-        current_user_id = self.user.key().id()
-        if int(post_author_id) != int(current_user_id):
-            self.redirect('/'+post_id)
         self.render('newpost.html', token=token, post=post)
 
+    @user_logged_in
+    @post_exists
+    @user_owns_post
     def post(self, post_id):
         post = self.get_post(post_id)
-        post_author_id = post.owner.key().id()
-        current_user_id = self.user.key().id()
-        if int(post_author_id) == int(current_user_id):
-            new_title = self.request.get('title')
-            new_body = self.request.get('content')
-            form_token = self.request.get('token')
-            if new_title and new_body:
-                if self.validate_csrf_token(self.user, form_token):
-                    post.title = new_title
-                    post.content = new_body
-                    post.put()
-                    self.redirect('/'+post_id)
+        new_title = self.request.get('title')
+        new_body = self.request.get('content')
+        form_token = self.request.get('token')
+        if new_title and new_body:
+            if self.validate_csrf_token(self.user, form_token):
+                post.title = new_title
+                post.content = new_body
+                post.put()
+                self.redirect('/'+post_id)
             else:
                 self.render('newpost.html', post=post, error='Please add title and body')
 
 
 class DeletePost(BlogHandler):
+    @post_exists
     def get(self, post_id):
         self.redirect('/'+post_id)
 
+    @user_logged_in
+    @post_exists
+    @user_owns_post
     def post(self, post_id):
         post = self.get_post(post_id)
-        if self.user.key().id() == post.owner.key().id():
-            if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
-                post.delete()
-                self.redirect('/')
+        if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
+            post.delete()
+            self.redirect('/')
 
 
 class DeleteComment(BlogHandler):
-    def get(self, post_id, comment_id):
+    @post_exists
+    def get(self, post_id):
         self.redirect('/'+post_id)
 
+    @user_logged_in
+    @comment_exists
+    @user_owns_comment
     def post(self, post_id, comment_id):
-        post = self.get_post(post_id)
         if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
-            key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
-            comment = db.get(key)
+            comment = self.get_comment(post_id, comment_id)
             comment.delete()
             self.redirect('/'+post_id)
 
 
 class EditComment(BlogHandler):
-    def get(self, post_id, comment_id):
+    @post_exists
+    def get(self, post_id):
         self.redirect('/' + post_id)
 
+    @user_logged_in
+    @comment_exists
+    @user_owns_comment
     def post(self, post_id, comment_id):
         post = self.get_post(post_id)
         new_comment = self.request.get('comment')
@@ -443,8 +522,7 @@ class EditComment(BlogHandler):
         likes = db.GqlQuery("SELECT * FROM Votes WHERE ANCESTOR IS :1 ORDER BY rating DESC", post).get()
         if self.validate_csrf_token(self.user, form_token=self.request.get('token')):
             if new_comment:
-                key = db.Key.from_path('Comment', int(comment_id), parent=post.key())
-                comment = db.get(key)
+                comment = self.get_comment(post_id, comment_id)
                 comment.comment = new_comment
                 comment.put()
                 self.redirect('/' + post_id)
